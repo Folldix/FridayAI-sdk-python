@@ -1,0 +1,4 @@
+httpx>=0.24.0          # Асинхронний HTTP клієнт
+pydantic>=2.0.0        # Валідація даних
+typing-extensions>=4.0 # Type hints для Python 3.7+
+python-dateutil>=2.8.0 # Робота з датами
