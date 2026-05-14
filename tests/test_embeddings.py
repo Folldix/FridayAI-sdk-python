@@ -5,9 +5,11 @@ Unit тести для Embeddings resource
 import pytest
 from unittest.mock import Mock
 import sys
-import os
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "friday" / "resources"))
+sys.path.insert(0, str(PROJECT_ROOT / "friday"))
 
 # Mock залежності
 class MockEmbedding:
@@ -107,7 +109,7 @@ class TestEmbeddingsCreate:
         client = Mock()
         embeddings = Embeddings(client)
         
-        with pytest.raises(ValueError, match="input list cannot be empty"):
+        with pytest.raises(ValueError, match="input cannot be empty"):
             embeddings.create(input=[])
     
     def test_create_with_kwargs(self):

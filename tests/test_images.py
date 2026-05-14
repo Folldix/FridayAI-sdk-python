@@ -5,9 +5,11 @@ Unit тести для Images resource
 import pytest
 from unittest.mock import Mock, patch
 import sys
-import os
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "friday" / "resources"))
+sys.path.insert(0, str(PROJECT_ROOT / "friday"))
 
 # Mock залежності
 class MockImageResponse:

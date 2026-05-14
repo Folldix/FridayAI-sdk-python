@@ -6,12 +6,13 @@ Unit тести для модуля _utils.py
 
 import pytest
 import os
-import sys
 import json
 import tempfile
+import sys
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "friday"))
 
 from _utils import (
     # Format conversion

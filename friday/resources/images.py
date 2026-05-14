@@ -5,13 +5,13 @@ Images Resource для FridayAI SDK.
 """
 
 from typing import Optional, Union
-import sys
-import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from _client import BaseClient, AsyncClient
-from _models import ImageResponse
+try:
+    from .._client import BaseClient, AsyncClient
+    from .models import ImageResponse
+except ImportError:
+    from _client import BaseClient, AsyncClient  # type: ignore
+    from _models import ImageResponse  # type: ignore
 
 
 class Images:

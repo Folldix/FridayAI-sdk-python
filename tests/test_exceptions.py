@@ -7,10 +7,10 @@ Unit тести для модуля _exceptions.py
 import pytest
 from unittest.mock import Mock, MagicMock
 import sys
-import os
+from pathlib import Path
 
-# Додаємо шлях до модуля для імпорту
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "friday"))
 
 from _exceptions import (
     FridayError,
@@ -385,7 +385,7 @@ class TestAPITimeoutError:
     
     def test_default_message(self):
         error = APITimeoutError()
-        assert "timeout" in error.message.lower()
+        assert "timed out" in error.message.lower()
     
     def test_with_timeout(self):
         """Тест з timeout значенням"""

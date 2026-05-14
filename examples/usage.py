@@ -1,120 +1,55 @@
-"""
-Приклади використання Usage Resource
-"""
+"""Real usage and limits API examples."""
 
-print("=" * 60)
-print(" FridayAI SDK - Usage Resource Examples")
-print("=" * 60 + "\n")
+import os
+import sys
 
-print("Приклад 1: Перевірка лімітів")
-print("-" * 60)
-print("""
+EXAMPLES_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(EXAMPLES_DIR)
+if sys.path and os.path.abspath(sys.path[0]) == EXAMPLES_DIR:
+    sys.path.append(sys.path.pop(0))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from friday import Friday
 
-client = Friday(api_key="sk-...")
+from _common import optional_base_url, require_api_key, section
 
-# Статус використання
-status = client.usage.retrieve()
 
-print(f"Chat: {status.usage.chat}/{status.limits.chat}")
-print(f"Image: {status.usage.image}/{status.limits.image}")
-print(f"Voice: {status.usage.voice}/{status.limits.voice}")
+def main() -> None:
+    api_key = require_api_key()
+    kwargs = {"api_key": api_key}
+    base_url = optional_base_url()
+    if base_url:
+        kwargs["base_url"] = base_url
 
-# Перевірка залишку
-if status.remaining.chat < 10:
-    print("Warning: Low chat quota!")
-""")
-print()
+    with Friday(**kwargs) as client:
+        section("1) Usage Status")
+        status = client.usage.retrieve()
+        print(f"Token: {status.token_hash}")
+        print(
+            f"Chat: {status.usage.chat}/{status.limits.chat} "
+            f"(remaining {status.remaining.chat})"
+        )
+        print(
+            f"Image: {status.usage.image}/{status.limits.image} "
+            f"(remaining {status.remaining.image})"
+        )
+        print(
+            f"Voice: {status.usage.voice}/{status.limits.voice} "
+            f"(remaining {status.remaining.voice})"
+        )
 
-print("Приклад 2: Логи чатів")
-print("-" * 60)
-print("""
-# Список логів
-logs = client.usage.logs.list(
-    date="2024-01-15",
-    model="friday_big",
-    limit=10
-)
+        section("2) Recent Chat Logs")
+        logs = client.usage.logs.list(limit=5)
+        print("Logs count:", len(logs.items))
+        for item in logs.items[:3]:
+            preview = item.response[:90].replace("\n", " ")
+            print(f"- {item.id} | {item.model} | {preview}")
 
-for log in logs.items:
-    print(f"ID: {log.id}")
-    print(f"Model: {log.model}")
-    print(f"Response: {log.response[:50]}...")
+        section("3) User Profile Info")
+        info = client.usage.users.retrieve()
+        print("Current user info:", info.info)
 
-# Конкретний лог
-log = client.usage.logs.retrieve(id="abc123")
-print(log.conversation)
-print(log.response)
-""")
-print()
 
-print("Приклад 3: Управління профілем")
-print("-" * 60)
-print("""
-# Отримання інформації
-info = client.usage.users.retrieve()
-print(info.info)
-
-# Оновлення
-result = client.usage.users.update(
-    info="Name: John, Preferences: tech news, AI"
-)
-
-# Видалення
-result = client.usage.users.delete()
-""")
-print()
-
-print("=" * 60)
-print(" Всі приклади показано!")
-print("=" * 60)
-
-print("\n" + "=" * 60)
-print(" ПІДСУМОК РЕАЛІЗАЦІЇ")
-print("=" * 60 + "\n")
-
-print("""
-# ✅ Реалізація пункту 4.6: Usage Resource
-
-## Готово!
-
-Usage Resource повністю реалізовано з:
-- Usage tracking ✅
-- Chat logs ✅
-- User profile ✅
-- Sync + Async ✅
-
-## Файли
-1. usage.py (320 рядків)
-2. test_usage.py (тести)
-3. examples (цей файл)
-
-## 🚀 Прогрес SDK: 10/10 ✅
-
-**100% БАЗОВОЇ ІНФРАСТРУКТУРИ ЗАВЕРШЕНО!**
-
-Завершено ВСІ етапи:
-✅ 2.1 - Exceptions
-✅ 2.2 - HTTP Client
-✅ 3.1 - Models
-✅ 3.2 - Utils
-✅ 4.1 - Chat Resource
-✅ 4.2 - Images Resource
-✅ 4.3 - Audio Resource
-✅ 4.4 - Embeddings Resource
-✅ 4.5 - Collections Resource
-✅ 4.6 - Usage Resource
-
-## Наступні кроки
-
-Базова інфраструктура готова!
-
-Тепер можна:
-1. Створити головний Friday клієнт (__init__.py)
-2. Додати setup.py для публікації
-3. Створити повну документацію
-4. Додати інтеграційні тести
-5. Підготувати до публікації в PyPI
-
-🎉 SDK готовий до використання!
-""")
+if __name__ == "__main__":
+    main()

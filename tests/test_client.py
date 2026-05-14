@@ -5,14 +5,12 @@ Unit тести для модуля _client.py
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, AsyncMock
 import sys
-import os
-import time
+from pathlib import Path
 
-# Додаємо шлях до модуля
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "friday"))
 from _client import BaseClient, AsyncClient
 from _exceptions import (
     APIError,
@@ -463,7 +461,7 @@ class TestAsyncClient:
         
         # Mock async client
         mock_async_client = Mock()
-        mock_async_client.aclose = Mock(return_value=None)
+        mock_async_client.aclose = AsyncMock(return_value=None)
         client._client = mock_async_client
         
         await client.aclose()

@@ -4,9 +4,12 @@ Unit тести для Usage resource
 
 import pytest
 from unittest.mock import Mock
-import sys, os
+import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "friday" / "resources"))
+sys.path.insert(0, str(PROJECT_ROOT / "friday"))
 
 # Mock models
 class MockUsageStatus:
@@ -42,6 +45,7 @@ class TestUsageRetrieve:
     def test_retrieve(self):
         """Тест отримання статусу"""
         client = Mock()
+        client.api_key = "test-key"
         client._make_request = Mock(return_value={
             "limits": {"chat": 100},
             "usage": {"chat": 25},
@@ -52,7 +56,11 @@ class TestUsageRetrieve:
         result = usage.retrieve()
         
         assert isinstance(result, MockUsageStatus)
-        client._make_request.assert_called_once_with("GET", "/usage/status")
+        client._make_request.assert_called_once_with(
+            "GET",
+            "/usage/status",
+            params={"token": "test-key"}
+        )
 
 
 class TestLogs:
@@ -61,6 +69,7 @@ class TestLogs:
     def test_list(self):
         """Тест списку логів"""
         client = Mock()
+        client.api_key = "test-key"
         client._make_request = Mock(return_value={
             "items": [{"id": "1"}, {"id": "2"}]
         })
@@ -73,6 +82,7 @@ class TestLogs:
     def test_retrieve(self):
         """Тест отримання логу"""
         client = Mock()
+        client.api_key = "test-key"
         client._make_request = Mock(return_value={"id": "abc"})
         
         logs = Logs(client)
@@ -87,6 +97,7 @@ class TestUsers:
     def test_retrieve(self):
         """Тест отримання інформації"""
         client = Mock()
+        client.api_key = "test-key"
         client._make_request = Mock(return_value={"info": "test"})
         
         users = Users(client)
@@ -97,6 +108,7 @@ class TestUsers:
     def test_update(self):
         """Тест оновлення"""
         client = Mock()
+        client.api_key = "test-key"
         client._make_request = Mock(return_value={"ok": True})
         
         users = Users(client)

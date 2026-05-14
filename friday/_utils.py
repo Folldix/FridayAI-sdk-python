@@ -54,7 +54,10 @@ def convert_friday_to_openai_format(
         "Hello there!"
     """
     # Витягуємо текст відповіді
-    response_text = response.get("response", "")
+    response_text = response.get("text")
+    if response_text is None:
+        response_value = response.get("response", "")
+        response_text = response_value if isinstance(response_value, str) else str(response_value)
     
     # Генеруємо ID якщо не передано
     if request_id is None:
@@ -348,12 +351,14 @@ def stream_chat_completion(
         ...         print(content, end="")
     """
     for line in response.iter_lines():
+        if line.startswith("data:") and line[5:].strip() == "[DONE]":
+            break
         # Парсимо SSE event
         data = parse_sse_event(line)
         
         # [DONE] або invalid → закінчуємо
         if data is None:
-            break
+            continue
         
         # Yield parsed chunk
         yield data

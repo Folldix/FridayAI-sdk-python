@@ -4,13 +4,23 @@
 Цей файл демонструє різні сценарії обробки помилок.
 """
 
+import os
+import sys
+
+EXAMPLES_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(EXAMPLES_DIR)
+if sys.path and os.path.abspath(sys.path[0]) == EXAMPLES_DIR:
+    sys.path.append(sys.path.pop(0))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 import time
 import logging
 from typing import Optional, Callable, Any
 
 # Імпортуємо наші exception класи
 # В реальному використанні: from friday.exceptions import ...
-from _exceptions import (
+from friday._exceptions import (
     FridayError,
     APIError,
     AuthenticationError,
@@ -52,17 +62,17 @@ def example_basic_error_handling():
         print(f"Response: {response}")
     
     except AuthenticationError as e:
-        print(f"❌ Authentication failed: {e.message}")
+        print(f"ERROR: Authentication failed: {e.message}")
         print(f"   Status code: {e.status_code}")
         print(f"   Request ID: {e.request_id}")
-        print(f"   💡 Tip: Check your API key at https://fridayai.online/settings")
+        print(f"   Tip: Check your API key at https://fridayai.online/settings")
     
     except APIError as e:
-        print(f"❌ API error: {e.message}")
+        print(f"ERROR: API error: {e.message}")
         print(f"   Status: {e.status_code}")
     
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"ERROR: Unexpected error: {e}")
     
     print()
 
@@ -102,18 +112,18 @@ def example_rate_limit_with_retry():
         """Виклик з retry логікою"""
         for attempt in range(max_retries):
             try:
-                print(f"🔄 Attempt {attempt + 1}/{max_retries}...")
+                print(f"Retry attempt {attempt + 1}/{max_retries}...")
                 result = simulate_api_with_rate_limit(attempt)
-                print(f"✅ Success: {result}")
+                print(f"Success: {result}")
                 return result
             
             except RateLimitError as e:
-                print(f"⚠️  Rate limit hit: {e.message}")
+                print(f"WARNING: Rate limit hit: {e.message}")
                 print(f"   Usage: {e.current_usage}/{e.limit}")
                 
                 if attempt == max_retries - 1:
                     # Останній retry - викидаємо помилку
-                    print(f"❌ Max retries reached. Giving up.")
+                    print(f"ERROR: Max retries reached. Giving up.")
                     raise
                 
                 # Чекаємо перед наступною спробою
@@ -126,7 +136,7 @@ def example_rate_limit_with_retry():
     try:
         result = call_with_retry()
     except RateLimitError as e:
-        print(f"❌ Failed after all retries: {e}")
+        print(f"ERROR: Failed after all retries: {e}")
     
     print()
 
@@ -161,14 +171,14 @@ def example_validation_errors():
         simulate_bad_request()
     
     except BadRequestError as e:
-        print(f"❌ Bad request: {e.message}")
+        print(f"ERROR: Bad request: {e.message}")
         
         if e.validation_errors:
             print(f"   Validation errors ({len(e.validation_errors)}):")
             for i, error in enumerate(e.validation_errors, 1):
                 print(f"   {i}. {error}")
         
-        print(f"\n   💡 Tip: Check your request parameters")
+        print(f"\n   Tip: Check your request parameters")
     
     print()
 
@@ -193,10 +203,10 @@ def example_network_errors():
             original_error=ConnectionError("Network is unreachable")
         )
     except APIConnectionError as e:
-        print(f"❌ Connection failed: {e.message}")
+        print(f"ERROR: Connection failed: {e.message}")
         if e.original_error:
             print(f"   Details: {e.original_error}")
-        print(f"   💡 Tip: Check your internet connection")
+        print(f"   Tip: Check your internet connection")
     
     # Приклад 4.2: Timeout Error
     print("\n4.2 Timeout Error:")
@@ -206,9 +216,9 @@ def example_network_errors():
             timeout=30.0
         )
     except APITimeoutError as e:
-        print(f"❌ Request timed out: {e.message}")
+        print(f"ERROR: Request timed out: {e.message}")
         print(f"   Timeout: {e.timeout} seconds")
-        print(f"   💡 Tip: Try increasing the timeout or retry later")
+        print(f"   Tip: Try increasing the timeout or retry later")
     
     print()
 
@@ -238,16 +248,16 @@ def example_server_errors_with_backoff():
         """Виклик з exponential backoff"""
         for attempt in range(max_retries):
             try:
-                print(f"🔄 Attempt {attempt + 1}/{max_retries}...")
+                print(f"Retry attempt {attempt + 1}/{max_retries}...")
                 result = simulate_server_error(attempt)
-                print(f"✅ Success: {result}")
+                print(f"Success: {result}")
                 return result
             
             except (InternalServerError, ServiceUnavailableError) as e:
-                print(f"⚠️  Server error: {e.message}")
+                print(f"WARNING: Server error: {e.message}")
                 
                 if attempt == max_retries - 1:
-                    print(f"❌ Max retries reached.")
+                    print(f"ERROR: Max retries reached.")
                     raise
                 
                 # Exponential backoff: 1s, 2s, 4s, 8s...
@@ -260,7 +270,7 @@ def example_server_errors_with_backoff():
     try:
         result = call_with_exponential_backoff()
     except (InternalServerError, ServiceUnavailableError) as e:
-        print(f"❌ Server error persists: {e}")
+        print(f"ERROR: Server error persists: {e}")
     
     print()
 
@@ -383,7 +393,7 @@ def example_client_validation():
     try:
         validate_messages([])
     except ValidationError as e:
-        print(f"❌ Validation failed: {e.message}")
+        print(f"ERROR: Validation failed: {e.message}")
         print(f"   Field: {e.field}")
     
     # Тест 2: Невалідний тип
@@ -391,7 +401,7 @@ def example_client_validation():
     try:
         validate_messages("invalid")
     except ValidationError as e:
-        print(f"❌ Validation failed: {e.message}")
+        print(f"ERROR: Validation failed: {e.message}")
         print(f"   Field: {e.field}")
         print(f"   Value: {e.value}")
     
@@ -402,7 +412,7 @@ def example_client_validation():
             {"role": "invalid_role", "content": "Hello"}
         ])
     except ValidationError as e:
-        print(f"❌ Validation failed: {e.message}")
+        print(f"ERROR: Validation failed: {e.message}")
         print(f"   Field: {e.field}")
         print(f"   Value: {e.value}")
     
@@ -412,9 +422,9 @@ def example_client_validation():
         validate_messages([
             {"role": "user", "content": "Hello"}
         ])
-        print("✅ Validation passed!")
+        print("Validation passed!")
     except ValidationError as e:
-        print(f"❌ Unexpected validation error: {e}")
+        print(f"ERROR: Unexpected validation error: {e}")
     
     print()
 
@@ -446,19 +456,19 @@ def example_catch_all_friday_errors():
     
     for error_type in error_types:
         try:
-            print(f"\n🔄 Testing {error_type} error...")
+            print(f"\nTesting {error_type} error...")
             simulate_random_error(error_type)
         
         except FridayError as e:
             # Ловимо всі FridayAI помилки
             error_name = e.__class__.__name__
-            print(f"❌ Caught {error_name}: {e.message}")
+            print(f"ERROR: Caught {error_name}: {e.message}")
             
             # Можна додати специфічну обробку для певних типів
             if isinstance(e, RateLimitError):
-                print(f"   → This is a rate limit error")
+                print(f"   -> This is a rate limit error")
             elif isinstance(e, APIConnectionError):
-                print(f"   → This is a connection error")
+                print(f"   -> This is a connection error")
     
     print()
 
@@ -477,20 +487,20 @@ class ErrorHandler:
         self.retry = retry
     
     def __enter__(self):
-        print(f"\n🚀 Starting: {self.operation_name}")
+        print(f"\nStarting: {self.operation_name}")
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is None:
-            print(f"✅ Completed: {self.operation_name}")
+            print(f"Completed: {self.operation_name}")
             return True
         
         if issubclass(exc_type, FridayError):
-            print(f"❌ Failed: {self.operation_name}")
+            print(f"ERROR: Failed: {self.operation_name}")
             print(f"   Error: {exc_val}")
             
             if isinstance(exc_val, RateLimitError) and self.retry:
-                print(f"   🔄 Will retry after {exc_val.retry_after}s")
+                print(f"   Will retry after {exc_val.retry_after}s")
             
             # Suppress exception (не прокидувати далі)
             return True
@@ -551,7 +561,7 @@ def main():
         try:
             example()
         except Exception as e:
-            print(f"⚠️  Example failed with unexpected error: {e}")
+            print(f"WARNING: Example failed with unexpected error: {e}")
             print()
     
     print("=" * 60)

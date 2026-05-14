@@ -21,15 +21,9 @@ Example:
     >>> audio = client.audio.speech.create(input="Hello")
 """
 
-import sys
-import os
-
-# Додаємо шлях для імпортів
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 # Core
-from _client import BaseClient, AsyncClient
-from _exceptions import (
+from ._client import BaseClient, AsyncClient
+from ._exceptions import (
     FridayError,
     APIError,
     AuthenticationError,
@@ -47,11 +41,11 @@ from _exceptions import (
 )
 
 # Models
-from _models import (
+from .resources.models import (
     ChatCompletion,
     ChatCompletionChunk,
-    ChatMessage,
-    ChatChoice,
+    ChatCompletionMessage as ChatMessage,
+    Choice as ChatChoice,
     ImageResponse,
     AudioResponse,
     EmbeddingResponse,
@@ -66,15 +60,18 @@ from _models import (
 )
 
 # Resources
-from chat import Chat
-from images import Images
-from audio import Audio
-from embeddings import Embeddings
-from collections import Collections
-from usage import Usage
+from .resources.chat import Chat
+from .resources.images import Images
+from .resources.audio import Audio
+from .resources.embeddings import Embeddings
+from .resources.collections import Collections
+from .resources.usage import Usage
 
 # Version
-__version__ = "0.1.0"
+try:
+    from ._version import __version__
+except Exception:
+    __version__ = "0.1.0"
 
 
 class Friday:
@@ -194,6 +191,10 @@ class Friday:
             >>> client.close()
         """
         self._client.close()
+
+    def health(self):
+        """Return the API health status."""
+        return self._client._make_request("GET", "/health")
     
     def __repr__(self):
         """String representation of the client."""
@@ -269,7 +270,11 @@ class AsyncFriday:
     
     async def close(self):
         """Close async HTTP connections."""
-        await self._client.close()
+        await self._client.aclose()
+
+    async def health(self):
+        """Return the API health status."""
+        return await self._client._make_request("GET", "/health")
     
     def __repr__(self):
         """String representation of the async client."""

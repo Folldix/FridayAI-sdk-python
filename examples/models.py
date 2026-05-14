@@ -13,7 +13,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Mock models для демонстрації без pydantic
-print("⚠️  NOTE: Running in demo mode without pydantic")
+print("NOTE: Running in demo mode without pydantic")
 print("    Install pydantic for full functionality: pip install pydantic>=2.0\n")
 
 
@@ -70,7 +70,7 @@ json_str = completion.model_dump_json()
 """)
 print()
 
-print("Приклад 3: FridayAI → OpenAI Conversion")
+print("Приклад 3: FridayAI -> OpenAI Conversion")
 print("-" * 60)
 print("""
 # FridayAI повертає просту структуру

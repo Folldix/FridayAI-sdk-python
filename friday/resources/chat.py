@@ -5,22 +5,29 @@ Chat Resource для FridayAI SDK.
 """
 
 from typing import Dict, Any, List, Optional, Union, Iterator, AsyncIterator
-import sys
-import os
 
-# Додаємо шлях для імпорту
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from _client import BaseClient, AsyncClient
-from _models import ChatCompletion, ChatCompletionChunk
-from _utils import (
-    prepare_messages,
-    validate_model_name,
-    validate_messages,
-    convert_friday_to_openai_format,
-    stream_chat_completion,
-)
-from _exceptions import ValidationError
+try:
+    from .._client import BaseClient, AsyncClient
+    from .models import ChatCompletion, ChatCompletionChunk
+    from .._utils import (
+        prepare_messages,
+        validate_model_name,
+        validate_messages,
+        convert_friday_to_openai_format,
+        stream_chat_completion,
+    )
+    from .._exceptions import ValidationError
+except ImportError:
+    from _client import BaseClient, AsyncClient  # type: ignore
+    from _models import ChatCompletion, ChatCompletionChunk  # type: ignore
+    from _utils import (  # type: ignore
+        prepare_messages,
+        validate_model_name,
+        validate_messages,
+        convert_friday_to_openai_format,
+        stream_chat_completion,
+    )
+    from _exceptions import ValidationError  # type: ignore
 
 
 class Completions:
@@ -56,7 +63,9 @@ class Completions:
     def create(
         self,
         *,
-        messages: Union[str, List[Dict], Dict],
+        messages: Optional[Union[str, List[Dict], Dict]] = None,
+        conversation: Optional[Union[str, List[Dict], Dict]] = None,
+        prompt: Optional[str] = None,
         model: str = "friday_big",
         stream: bool = False,
         user: Optional[str] = None,
@@ -116,6 +125,11 @@ class Completions:
             ... )
         """
         # Валідація моделі
+        if messages is None:
+            messages = conversation if conversation is not None else prompt
+        if messages is None:
+            raise ValidationError("messages, conversation, or prompt is required")
+
         validate_model_name(model)
         
         # Підготовка messages
@@ -166,7 +180,9 @@ class Completions:
     async def acreate(
         self,
         *,
-        messages: Union[str, List[Dict], Dict],
+        messages: Optional[Union[str, List[Dict], Dict]] = None,
+        conversation: Optional[Union[str, List[Dict], Dict]] = None,
+        prompt: Optional[str] = None,
         model: str = "friday_big",
         stream: bool = False,
         user: Optional[str] = None,
@@ -198,6 +214,11 @@ class Completions:
             >>> asyncio.run(main())
         """
         # Валідація
+        if messages is None:
+            messages = conversation if conversation is not None else prompt
+        if messages is None:
+            raise ValidationError("messages, conversation, or prompt is required")
+
         validate_model_name(model)
         prepared_messages = prepare_messages(messages)
         validate_messages(prepared_messages)
@@ -298,7 +319,10 @@ class Completions:
     
     async def _astream_chat_completion(self, response) -> AsyncIterator[Dict]:
         """Async версія stream_chat_completion"""
-        from _utils import parse_sse_event
+        try:
+            from .._utils import parse_sse_event
+        except ImportError:
+            from _utils import parse_sse_event  # type: ignore
         
         async for line in response.aiter_lines():
             data = parse_sse_event(line)
@@ -334,6 +358,7 @@ class Chat:
             client: BaseClient або AsyncClient instance
         """
         self._completions = Completions(client)
+        self._client = client
     
     @property
     def completions(self) -> Completions:
@@ -344,6 +369,102 @@ class Chat:
             Completions instance
         """
         return self._completions
+
+    def message(
+        self,
+        *,
+        messages: Optional[Union[str, List[Dict], Dict]] = None,
+        conversation: Optional[Union[str, List[Dict], Dict]] = None,
+        prompt: Optional[str] = None,
+        model: str = "friday_medium",
+        user: Optional[str] = None,
+        info: Optional[str] = None,
+        extend_info: bool = False,
+        **kwargs
+    ) -> Dict[str, Any]:
+        payload = self._build_payload(
+            messages=messages,
+            conversation=conversation,
+            prompt=prompt,
+            model=model,
+            user=user,
+            info=info,
+            extend_info=extend_info,
+            **kwargs
+        )
+        return self._client._make_request("POST", "/message", json=payload)
+
+    def bot(
+        self,
+        *,
+        messages: Optional[Union[str, List[Dict], Dict]] = None,
+        conversation: Optional[Union[str, List[Dict], Dict]] = None,
+        prompt: Optional[str] = None,
+        model: str = "friday_big",
+        clients: Optional[List[Dict]] = None,
+        user: Optional[str] = None,
+        info: Optional[str] = None,
+        extend_info: bool = False,
+        **kwargs
+    ) -> Dict[str, Any]:
+        payload = self._build_payload(
+            messages=messages,
+            conversation=conversation,
+            prompt=prompt,
+            model=model,
+            user=user,
+            info=info,
+            extend_info=extend_info,
+            **kwargs
+        )
+        if clients is not None:
+            payload["clients"] = clients
+        return self._client._make_request("POST", "/bot", json=payload)
+
+    async def amessage(self, **kwargs) -> Dict[str, Any]:
+        payload = self._build_payload(**kwargs)
+        return await self._client._make_request("POST", "/message", json=payload)
+
+    async def abot(self, **kwargs) -> Dict[str, Any]:
+        clients = kwargs.pop("clients", None)
+        payload = self._build_payload(**kwargs)
+        if clients is not None:
+            payload["clients"] = clients
+        return await self._client._make_request("POST", "/bot", json=payload)
+
+    def _build_payload(
+        self,
+        *,
+        messages: Optional[Union[str, List[Dict], Dict]] = None,
+        conversation: Optional[Union[str, List[Dict], Dict]] = None,
+        prompt: Optional[str] = None,
+        model: str = "friday_medium",
+        user: Optional[str] = None,
+        info: Optional[str] = None,
+        extend_info: bool = False,
+        **kwargs
+    ) -> Dict[str, Any]:
+        if messages is None:
+            messages = conversation if conversation is not None else prompt
+        if messages is None:
+            raise ValidationError("messages, conversation, or prompt is required")
+
+        validate_model_name(model)
+        prepared_messages = prepare_messages(messages)
+        validate_messages(prepared_messages)
+
+        payload: Dict[str, Any] = {
+            "conversation": prepared_messages,
+            "model": model,
+        }
+        if user is not None:
+            payload["user"] = user
+        if info is not None:
+            payload["info"] = info
+        if extend_info:
+            payload["extend_info"] = extend_info
+        payload.update(kwargs)
+        return payload
 
 
 # ============================================================================
