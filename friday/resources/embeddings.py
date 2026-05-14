@@ -5,13 +5,13 @@ Embeddings Resource для FridayAI SDK.
 """
 
 from typing import Union, List
-import sys
-import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from _client import BaseClient, AsyncClient
-from _models import EmbeddingResponse, Embedding
+try:
+    from .._client import BaseClient, AsyncClient
+    from .models import EmbeddingResponse, Embedding
+except ImportError:
+    from _client import BaseClient, AsyncClient  # type: ignore
+    from _models import EmbeddingResponse, Embedding  # type: ignore
 
 
 class Embeddings:

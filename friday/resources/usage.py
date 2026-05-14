@@ -5,13 +5,13 @@ Usage Resource для FridayAI SDK.
 """
 
 from typing import Optional, Dict, Any, Union
-import sys
-import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from _client import BaseClient, AsyncClient
-from _models import UsageStatus, ChatLog, ChatLogsResponse, UserInfo, OkResponse
+try:
+    from .._client import BaseClient, AsyncClient
+    from .models import UsageStatus, ChatLog, ChatLogsResponse, UserInfo, OkResponse
+except ImportError:
+    from _client import BaseClient, AsyncClient  # type: ignore
+    from _models import UsageStatus, ChatLog, ChatLogsResponse, UserInfo, OkResponse  # type: ignore
 
 
 class Logs:
@@ -176,7 +176,8 @@ class Users:
         """
         response = self._client._make_request(
             "GET",
-            "/usage/user-info"
+            "/usage/user-info",
+            params={"token": self._client.api_key}
         )
         
         return UserInfo(**response)
@@ -203,7 +204,7 @@ class Users:
         if not info or not info.strip():
             raise ValueError("info cannot be empty")
         
-        payload = {"info": info}
+        payload = {"token": self._client.api_key, "info": info}
         payload.update(kwargs)
         
         response = self._client._make_request(
@@ -227,14 +228,19 @@ class Users:
         """
         response = self._client._make_request(
             "DELETE",
-            "/usage/user-info"
+            "/usage/user-info",
+            params={"token": self._client.api_key}
         )
         
         return response
     
     async def aretrieve(self) -> UserInfo:
         """Async версія retrieve()"""
-        response = await self._client._make_request("GET", "/usage/user-info")
+        response = await self._client._make_request(
+            "GET",
+            "/usage/user-info",
+            params={"token": self._client.api_key}
+        )
         return UserInfo(**response)
     
     async def aupdate(self, *, info: str, **kwargs) -> Dict[str, Any]:
@@ -242,7 +248,7 @@ class Users:
         if not info or not info.strip():
             raise ValueError("info cannot be empty")
         
-        payload = {"info": info}
+        payload = {"token": self._client.api_key, "info": info}
         payload.update(kwargs)
         
         response = await self._client._make_request(
@@ -255,7 +261,11 @@ class Users:
     
     async def adelete(self) -> Dict[str, Any]:
         """Async версія delete()"""
-        response = await self._client._make_request("DELETE", "/usage/user-info")
+        response = await self._client._make_request(
+            "DELETE",
+            "/usage/user-info",
+            params={"token": self._client.api_key}
+        )
         return response
 
 
@@ -322,14 +332,19 @@ class Usage:
         """
         response = self._client._make_request(
             "GET",
-            "/usage/status"
+            "/usage/status",
+            params={"token": self._client.api_key}
         )
         
         return UsageStatus(**response)
     
     async def aretrieve(self) -> UsageStatus:
         """Async версія retrieve()"""
-        response = await self._client._make_request("GET", "/usage/status")
+        response = await self._client._make_request(
+            "GET",
+            "/usage/status",
+            params={"token": self._client.api_key}
+        )
         return UsageStatus(**response)
 
 

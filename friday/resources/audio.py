@@ -5,13 +5,13 @@ Audio Resource для FridayAI SDK.
 """
 
 from typing import Optional, Union
-import sys
-import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from _client import BaseClient, AsyncClient
-from _models import AudioResponse
+try:
+    from .._client import BaseClient, AsyncClient
+    from .models import AudioResponse
+except ImportError:
+    from _client import BaseClient, AsyncClient  # type: ignore
+    from _models import AudioResponse  # type: ignore
 
 
 class Speech:

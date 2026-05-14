@@ -5,7 +5,12 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+EXAMPLES_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(EXAMPLES_DIR)
+if sys.path and os.path.abspath(sys.path[0]) == EXAMPLES_DIR:
+    sys.path.append(sys.path.pop(0))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 print("=" * 60)
 print(" FridayAI SDK - Utils Examples")
@@ -16,7 +21,7 @@ print("=" * 60 + "\n")
 # Приклад 1: Конвертація форматів
 # ============================================================================
 
-print("Приклад 1: Конвертація FridayAI → OpenAI")
+print("Приклад 1: Конвертація FridayAI -> OpenAI")
 print("-" * 60)
 print("""
 from friday._utils import convert_friday_to_openai_format

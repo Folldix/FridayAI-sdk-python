@@ -5,13 +5,15 @@ Unit тести для модуля _models.py
 """
 
 import pytest
+pytest.importorskip("pydantic")
 from pydantic import ValidationError
 import sys
-import os
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "friday" / "resources"))
 
-from _models import (
+from models import (
     # Chat models
     Message,
     ChatCompletionMessage,
@@ -87,7 +89,7 @@ class TestMessage:
         """Тест що невалідна роль викликає помилку"""
         with pytest.raises(ValidationError) as exc_info:
             Message(role="invalid_role", content="Test")
-        assert "role must be one of" in str(exc_info.value)
+        assert "Input should be 'user', 'assistant' or 'system'" in str(exc_info.value)
     
     def test_message_empty_string_content(self):
         """Тест що порожній string не дозволений"""

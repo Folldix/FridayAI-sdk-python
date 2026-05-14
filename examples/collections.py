@@ -1,162 +1,62 @@
-"""
-Приклади використання Collections Resource
-"""
+"""Collections API example (experimental in current SDK state)."""
 
-print("=" * 60)
-print(" FridayAI SDK - Collections Resource Examples")
-print("=" * 60 + "\n")
+import os
+import sys
+import time
 
-print("Приклад 1: Базові CRUD операції")
-print("-" * 60)
-print("""
+EXAMPLES_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(EXAMPLES_DIR)
+if sys.path and os.path.abspath(sys.path[0]) == EXAMPLES_DIR:
+    sys.path.append(sys.path.pop(0))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from friday import Friday
 
-client = Friday(api_key="sk-...")
+from _common import optional_base_url, require_api_key, section
 
-# Список колекцій
-collections = client.collections.list()
-print(collections)  # ['docs', 'products']
 
-# Створення колекції
-result = client.collections.create("my_docs")
-print(result)
+def main() -> None:
+    api_key = require_api_key()
+    kwargs = {"api_key": api_key}
+    base_url = optional_base_url()
+    if base_url:
+        kwargs["base_url"] = base_url
 
-# Інформація про колекцію
-info = client.collections.retrieve("my_docs")
-print(info.result)
+    collection_name = f"sdk_example_{int(time.time())}"
 
-# Видалення
-result = client.collections.delete("old_collection")
-""")
-print()
+    with Friday(**kwargs) as client:
+        section("1) List Collections")
+        names = client.collections.list()
+        print("Existing collections:", names)
 
-print("Приклад 2: Додавання векторів")
-print("-" * 60)
-print("""
-# Генерація embeddings
-texts = ["Doc 1 text", "Doc 2 text", "Doc 3 text"]
-embeddings = client.embeddings.create(input=texts)
+        section("2) Create Collection")
+        create_result = client.collections.create(collection_name)
+        print(create_result)
 
-# Підготовка points
-points = []
-for i, emb in enumerate(embeddings.data):
-    points.append({
-        "id": f"doc-{i+1}",
-        "vector": emb.embedding,
-        "payload": {
-            "text": texts[i],
-            "category": "general"
-        }
-    })
-
-# Upsert
-result = client.collections.upsert(
-    name="my_docs",
-    points=points
-)
-print(f"Operation ID: {result.operation_id}")
-""")
-print()
-
-print("Приклад 3: Semantic search")
-print("-" * 60)
-print("""
-# Пошуковий запит
-query = "Tell me about Python"
-query_emb = client.embeddings.create(input=query)
-
-# Пошук схожих
-results = client.collections.search(
-    name="my_docs",
-    query=query_emb.data[0].embedding,
-    limit=5,
-    score_threshold=0.7
-)
-
-# Результати
-for point in results.points:
-    print(f"ID: {point.id}")
-    print(f"Score: {point.score:.4f}")
-    print(f"Text: {point.payload['text']}")
-    print()
-""")
-print()
-
-print("Приклад 4: З фільтрами")
-print("-" * 60)
-print("""
-# Пошук тільки в категорії 'tech'
-results = client.collections.search(
-    name="my_docs",
-    query=query_vector,
-    limit=10,
-    filter={
-        "must": [
-            {"key": "category", "match": {"value": "tech"}}
+        section("3) Upsert + Search")
+        texts = [
+            "Kyiv is the capital of Ukraine",
+            "Python is great for scripting",
+            "Embeddings are useful for semantic search",
         ]
-    }
-)
-""")
-print()
+        embs = client.embeddings.create(input=texts)
+        points = [
+            {"id": f"p{i}", "vector": item.embedding, "payload": {"text": texts[i]}}
+            for i, item in enumerate(embs.data)
+        ]
+        upsert = client.collections.upsert(name=collection_name, points=points)
+        print("Upsert operation:", upsert.operation_id)
 
-print("Приклад 5: RAG pipeline")
-print("-" * 60)
-print("""
-# 1. Індексація документів
-docs = ["Doc 1", "Doc 2", "Doc 3"]
-embeddings = client.embeddings.create(input=docs)
+        query_vec = client.embeddings.create(input="Tell me about Python").data[0].embedding
+        result = client.collections.search(name=collection_name, query=query_vec, limit=3)
+        for p in result.points:
+            print(f"- {p.id} ({p.score:.4f}) => {p.payload.get('text')}")
 
-points = [
-    {
-        "id": f"doc-{i}",
-        "vector": emb.embedding,
-        "payload": {"text": docs[i]}
-    }
-    for i, emb in enumerate(embeddings.data)
-]
+        section("4) Cleanup")
+        delete_result = client.collections.delete(collection_name)
+        print(delete_result)
 
-client.collections.upsert(name="knowledge", points=points)
 
-# 2. Retrieval
-query = "What is Python?"
-query_emb = client.embeddings.create(input=query)
-
-results = client.collections.search(
-    name="knowledge",
-    query=query_emb.data[0].embedding,
-    limit=3
-)
-
-# 3. Augmentation
-context = "\\n".join([
-    point.payload["text"] for point in results.points
-])
-
-# 4. Generation
-response = client.chat.completions.create(
-    messages=[
-        {"role": "system", "content": f"Context: {context}"},
-        {"role": "user", "content": query}
-    ]
-)
-
-print(response.choices[0].message.content)
-""")
-print()
-
-print("=" * 60)
-print(" Best Practices")
-print("=" * 60 + "\n")
-
-print("""
-1. Створюйте окремі колекції для різних типів даних
-2. Використовуйте payload для метаданих
-3. Додавайте фільтри для точнішого пошуку
-4. Встановлюйте score_threshold для якості
-5. Batch upsert для множинних документів
-6. Використовуйте RAG для контекстних відповідей
-""")
-
-print("=" * 60)
-print(" Всі приклади показано!")
-print("=" * 60)
+if __name__ == "__main__":
+    main()

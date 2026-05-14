@@ -27,15 +27,26 @@ except ImportError:
         "Install it with: pip install httpx"
     )
 
-from _exceptions import (
-    APIError,
-    APIConnectionError,
-    APITimeoutError,
-    InternalServerError,
-    ServiceUnavailableError,
-    make_error_from_response,
-    handle_httpx_error,
-)
+try:
+    from ._exceptions import (
+        APIError,
+        APIConnectionError,
+        APITimeoutError,
+        InternalServerError,
+        ServiceUnavailableError,
+        make_error_from_response,
+        handle_httpx_error,
+    )
+except ImportError:
+    from _exceptions import (  # type: ignore
+        APIError,
+        APIConnectionError,
+        APITimeoutError,
+        InternalServerError,
+        ServiceUnavailableError,
+        make_error_from_response,
+        handle_httpx_error,
+    )
 
 # Версія SDK (буде імпортуватись з _version.py)
 __version__ = "0.1.0"
@@ -318,15 +329,27 @@ class BaseClient:
                 # Виконання запиту
                 start_time = time.time()
                 
-                response = self._client.request(
-                    method=method,
-                    url=url,
-                    json=json,
-                    params=params,
-                    headers=prepared_headers,
-                    files=files,
-                    **kwargs
-                )
+                if stream:
+                    request = self._client.build_request(
+                        method=method,
+                        url=url,
+                        json=json,
+                        params=params,
+                        headers=prepared_headers,
+                        files=files,
+                        **kwargs
+                    )
+                    response = self._client.send(request, stream=True)
+                else:
+                    response = self._client.request(
+                        method=method,
+                        url=url,
+                        json=json,
+                        params=params,
+                        headers=prepared_headers,
+                        files=files,
+                        **kwargs
+                    )
                 
                 elapsed = time.time() - start_time
                 
@@ -636,15 +659,27 @@ class AsyncClient:
             try:
                 start_time = time.time()
                 
-                response = await client.request(
-                    method=method,
-                    url=url,
-                    json=json,
-                    params=params,
-                    headers=prepared_headers,
-                    files=files,
-                    **kwargs
-                )
+                if stream:
+                    request = client.build_request(
+                        method=method,
+                        url=url,
+                        json=json,
+                        params=params,
+                        headers=prepared_headers,
+                        files=files,
+                        **kwargs
+                    )
+                    response = await client.send(request, stream=True)
+                else:
+                    response = await client.request(
+                        method=method,
+                        url=url,
+                        json=json,
+                        params=params,
+                        headers=prepared_headers,
+                        files=files,
+                        **kwargs
+                    )
                 
                 elapsed = time.time() - start_time
                 

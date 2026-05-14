@@ -5,13 +5,13 @@ Collections Resource для FridayAI SDK.
 """
 
 from typing import List, Dict, Optional, Any, Union
-import sys
-import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from _client import BaseClient, AsyncClient
-from _models import CollectionInfo, SearchResult, UpsertResult
+try:
+    from .._client import BaseClient, AsyncClient
+    from .models import CollectionInfo, SearchResult, UpsertResult
+except ImportError:
+    from _client import BaseClient, AsyncClient  # type: ignore
+    from _models import CollectionInfo, SearchResult, UpsertResult  # type: ignore
 
 
 class Collections:
@@ -223,6 +223,34 @@ class Collections:
         )
         
         return SearchResult(**response)
+
+    def search_points(
+        self,
+        name: str,
+        *,
+        vector: List[float],
+        limit: int = 10,
+        score_threshold: float = 0.0,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Search points via POST /collections/{name}/points."""
+        if not name:
+            raise ValueError("collection name cannot be empty")
+        if not vector:
+            raise ValueError("vector cannot be empty")
+
+        payload = {
+            "vector": vector,
+            "limit": limit,
+            "score_threshold": score_threshold,
+        }
+        payload.update(kwargs)
+
+        return self._client._make_request(
+            "POST",
+            f"/collections/{name}/points",
+            json=payload
+        )
     
     def upsert(
         self,
@@ -363,6 +391,34 @@ class Collections:
         )
         
         return SearchResult(**response)
+
+    async def asearch_points(
+        self,
+        name: str,
+        *,
+        vector: List[float],
+        limit: int = 10,
+        score_threshold: float = 0.0,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Async version of search_points()."""
+        if not name:
+            raise ValueError("collection name cannot be empty")
+        if not vector:
+            raise ValueError("vector cannot be empty")
+
+        payload = {
+            "vector": vector,
+            "limit": limit,
+            "score_threshold": score_threshold,
+        }
+        payload.update(kwargs)
+
+        return await self._client._make_request(
+            "POST",
+            f"/collections/{name}/points",
+            json=payload
+        )
     
     async def aupsert(
         self,
